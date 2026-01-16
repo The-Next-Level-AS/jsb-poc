@@ -1,0 +1,1728 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="style.css?v=2" />
+    <script
+      defer
+      data-domain="versjon.no"
+      src="https://plausible.io/js/script.js"
+    ></script>
+  </head>
+  <body
+    onClick="javascript:document.getElementById('pop1').style.display = 'none'"
+  >
+    <div><img src="top-a.png" /><img src="top-b.png" /></div>
+    <img
+      src="1.png"
+      id="onboard1"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 999;
+        width: 100vw;
+        display: none;
+      "
+    />
+    <img
+      src="2.png"
+      id="onboard2"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 998;
+        width: 100vw;
+        display: none;
+      "
+    />
+    <img
+      src="1.png"
+      id="onboard3"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 997;
+        width: 100vw;
+        display: none;
+      "
+    />
+    <div id="bg"></div>
+    <!-- <a style="position: absolute" href="/"><- Forside</a> -->
+    <h2>Dagligbank</h2>
+    <p>
+      Hos oss får du alt du trenger for en trygg og fleksibel bruk av banken.
+    </p>
+    <main id="body">
+      <section id="ui" data-layout="2">
+        <div class="item1"></div>
+        <div class="item2"></div>
+        <div class="item3"></div>
+        <div class="item4"></div>
+        <div class="item5"></div>
+        <div class="item6"></div>
+        <div class="item7"></div>
+        <div class="item8"></div>
+        <div class="item9"></div>
+        <div class="item10"></div>
+      </section>
+    </main>
+    <form id="widget">
+      <img
+        src="man.png"
+        style="
+          width: 50px;
+          height: 50px;
+          align-self: start;
+          margin-right: 1rem;
+          margin-left: -1.275rem;
+          margin-top: -1.275rem;
+          mix-blend-mode: multiply;
+          filter: drop-shadow(0px 1px 0px white) contrast(2) !important;
+        "
+      />
+      <fieldset>
+        <legend>
+          Hva trenger du hjelp til?
+          <span
+            onClick="javascript:event.stopPropagation();document.getElementById('pop1').style.display = 'block';document.getElementById('search').focus()"
+            style="
+              margin-left: 4px;
+              height: 16px;
+              width: 16px;
+              border-radius: 8px;
+              text-align: center;
+              line-height: 16px;
+              display: inline-block;
+              font-size: 11px;
+              background: linear-gradient(#40404080, #40404060);
+              color: white;
+              top: -2px;
+              position: relative;
+              cursor: pointer;
+            "
+            >?</span
+          >
+          <span
+            style="
+              display: none;
+              position: absolute;
+              color: white;
+              background: #404040e0;
+              padding: 16px;
+              width: 320px;
+              z-index: 999999999;
+              border-radius: 4px;
+              top: -120px;
+              font-size: 13px;
+            "
+            id="pop1"
+          >
+            Her kan du skrive inn hva du trenger hjelp til. Du kan for eksempel
+            skrive «jeg har mistet lommeboken».<br />Du kan også søke med å
+            bruke stemmen din ved å trykke på mikrofon-ikonet.
+          </span>
+        </legend>
+        <input type="text" id="search" />
+        <button id="start">
+          <span class="material-symbols-outlined">mic</span>
+        </button>
+      </fieldset>
+      <fieldset>
+        <legend>
+          Din opplevelse
+          <span
+            style="
+              margin-left: 4px;
+              height: 16px;
+              width: 16px;
+              border-radius: 8px;
+              text-align: center;
+              line-height: 16px;
+              display: inline-block;
+              font-size: 11px;
+              background: linear-gradient(#40404080, #40404060);
+              color: white;
+              top: -2px;
+              position: relative;
+              cursor: pointer;
+            "
+            >?</span
+          >
+        </legend>
+        <label for="e">Assistert</label>
+        <input min="0" max="3" type="range" id="e" name="e" list="v" step="1" />
+        <label for="e">Selvstendig</label>
+      </fieldset>
+      <!-- <fieldset>
+        <legend>Opplevelse</legend>
+        <label for="a">Guidet</label>
+        <input min="0" max="3" type="range" id="a" name="a" list="v" step="1" />
+        <label for="a">Selvstendig</label>
+      </fieldset> -->
+      <datalist id="v">
+        <option value="0" label="0"></option>
+        <option value="1" label="1"></option>
+        <option value="2" label="2"></option>
+        <option value="3" label="3"></option>
+      </datalist>
+    </form>
+    <script type="module">
+      import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+      import { createClient } from "https://esm.sh/@sanity/client";
+      import { setupAudio } from "./audio.js";
+      import { askAI } from "./ask.js";
+      import { parseData } from "./parse.js";
+
+      window.searchMode = false;
+      window.searchQuery = "";
+      window.searchResult = "";
+
+      const projectId = "zq5it0ga",
+        dataset = "production",
+        apiVersion = "2024-04-04",
+        api = createClient({ projectId, dataset, apiVersion, useCdn: true }), // true
+        sitewideTabsComponent = "id0067ba64-5564-4118-ad12-829d68ebfb18",
+        textComponent = "id11a325a8-d104-4432-bbc5-d1687c92aabb",
+        textAlternativeComponent = "id09361070-1e12-4289-a991-e0a48e32edc0",
+        headingComponent = "id38ab7abf-3c3e-4a03-87b3-571f652e20f3",
+        headingAlternativeComponent = "id31f3cfdf-f1c6-4837-935e-af14edce875f",
+        itemComponent = "id74710783-5579-43ef-b2d6-da7d37a4eac7",
+        bigItemComponent = "id9290bda0-5b11-45d5-a45e-ad1a4575ab72",
+        smallItemComponent = "id94612602-6860-4405-bc3b-7ca8b2abb1ae",
+        smallItemAlternativeComponent =
+          "id4e5d9c42-43a0-4ba4-a972-fa44c627bab4";
+      let formObject = {},
+        generated,
+        terminated = false;
+
+      const toShow = [];
+
+      class Component extends HTMLElement {
+        constructor() {
+          super();
+        }
+
+        connectedCallback() {
+          this.render();
+        }
+
+        async render() {
+          const myId = this.id,
+            data = (
+              await api.fetch(
+                `*[_type == "component" && _id == "${
+                  myId.slice(2).split("_")[0]
+                }"]`
+              )
+            )[0],
+            style = document.createElement("style"),
+            script = document.createElement("script"),
+            shadowRoot = this.shadowRoot || this.attachShadow({ mode: "open" });
+
+          if (searchMode) {
+            shadowRoot.innerHTML += {
+              [headingAlternativeComponent]: data.html.replace(
+                "%CONTENT%",
+                "Du har søkt på: " + window.searchQuery
+              ),
+              [bigItemComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  window.searchResult[myId.split("_")[1]]?.title
+                )
+                .replace(
+                  "%BODY%",
+                  marked.parse(
+                    window.searchResult[myId.split("_")[1]]?.[
+                      `content_short_${formObject.e}_${formObject.a}`
+                    ] || ""
+                  )
+                )
+                .replace(
+                  'src="%IMG%"',
+                  // [window.searchResult[0]]?.[myId.split("_")[1]]?.picture?.[1]
+                  //   ?.asset._ref
+                  //   ? "https://cdn.sanity.io/images/zq5it0ga/production/" +
+                  //       [window.searchResult[0]]?.[
+                  //         myId.split("_")[1]
+                  //       ]?.picture?.[1]?.asset._ref
+                  //         .replace("image-", "")
+                  //         .replace("-png", ".png")
+                  //         .replace("-webp", ".webp")
+                  //         .replace("-jpg", ".jpg")
+                  //   :
+                  "style='width: 0px'"
+                )
+                .replace(
+                  "%URL%",
+                  `?id=${window.searchResult[myId.split("_")[1]]?.id}${state()}`
+                ),
+            }[myId.split("_")[0]];
+            style.textContent = data.css || "";
+            style.textContent += `
+            div.widget {
+              backdrop-filter: blur(16px);
+              padding: 3rem;
+              box-shadow: inset #beb8b430 0 0 0 1px, 0 0 .5rem 1rem #9b65f104,0 .25rem .5rem -.25rem #141c2410,0 .5rem 1rem -.25rem #141c2408;
+              background: radial-gradient(closest-side, #ffffff60 50%, #ffffff00);
+              border-radius: 1.5rem;
+              text-align: left;
+              height: auto;
+              width: ${formObject.e === "1" ? 920 : 680}px;
+              box-sizing: border-box;
+              margin-bottom: 1rem;
+              overflow: hidden;
+            }
+            
+            section.widget {
+              cursor: auto;
+              backdrop-filter: blur(16px);
+              align-items: start;
+              box-shadow: inset #beb8b430 0 0 0 1px, 0 0 .5rem 1rem #9b65f104,0 .25rem .5rem -.25rem #141c2410,0 .5rem 1rem -.25rem #141c2408;
+              background: radial-gradient(closest-side, #ffffff60 50%, #ffffff00);
+              padding-top: 2rem;
+              padding-right: 2rem;
+            }
+
+            .widget a {
+              color: #63b1bc;
+            }
+
+            .widget select {
+              width: 100%;
+    border: none;
+    margin-right: 0.25rem;
+    height: 64px;
+    padding: 1rem;
+    cursor: pointer;
+    background: #dfdad580;
+    outline: none;
+    font-size: 1.25rem;
+    font-family: 'Eika Semibold Regular';
+    border-radius: 32px;
+    box-sizing: border-box;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: inset 0 0 .5rem 1rem #9b65f104, inset 0 .25rem .5rem -.25rem #141c2410, inset 0 .5rem 1rem -.25rem #141c2408;
+    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+    color: rgb(51, 51, 51);
+    padding-left: 1.5rem;
+    padding-right: 3.5rem;
+    background-image: url(https://jsb.versjon.no/down.png);
+    background-repeat: no-repeat;
+    background-position: right;
+    background-size: 64px 64px;
+            }
+
+            .widget h6 {
+              display: none;
+            }
+
+            #result {
+              font-family: "Eika Semibold Regular";
+    color: #beb8b4;
+    font-size: 48px;
+    line-height: 56px;
+    margin: 0;
+    margin-top: 0.5rem;
+    transition: opacity 0.125s ease-in-out;
+            }
+
+            #result2 {
+  background: #63b1bc;
+  width: auto;
+  height: 64px;
+  padding: 1rem;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-decoration: none;
+  font-family: "Open Sans", Arial, sans-serif;
+  border-radius: 8px;
+  box-sizing: border-box;
+  box-shadow: 0 0 0.5rem 1rem #9b65f104, 0 0.25rem 0.5rem -0.25rem #141c2410,
+    0 0.5rem 1rem -0.25rem #141c2408;
+  display: inline-flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #fff;
+  justify-content: center;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+#result2 h4 {
+  font-family: "Eika Semibold Regular";
+  font-size: 1.25rem;
+  margin: 0;
+}
+          `;
+            shadowRoot.appendChild(style);
+            script.textContent = data.javascript || "";
+            shadowRoot.appendChild(script);
+            shadowRoot.innerHTML.indexOf("undefined") === -1 &&
+              shadowRoot.innerHTML.indexOf("null") === -1 &&
+              toShow.push(this.id);
+
+            return;
+          }
+
+          let childrenSelection =
+            JSON.parse(generated).children?.filter(
+              ({ nodeId }) =>
+                nodeId !== "bankid" &&
+                nodeId !== "payment" &&
+                nodeId !== "card" &&
+                nodeId !== "net"
+            ) || [];
+
+          if (formObject.e !== "0") {
+            childrenSelection = childrenSelection.filter(
+              ({ nodeId }) => nodeId !== "log-in"
+            );
+          }
+
+          shadowRoot.innerHTML += {
+            0: {
+              [headingComponent]: data.html.replace(
+                "%CONTENT%",
+                currentId() !== "daily"
+                  ? [JSON.parse(generated).title?.replace(".", ""), ""][
+                      myId.split("_")[1]
+                    ] || ""
+                  : JSON.parse(generated).tabularForm
+                  ? ""
+                  : childrenSelection[0]?.title.replace(".", "")
+              ),
+              [textComponent]: data.html.replace(
+                "%CONTENT%",
+                marked.parse(
+                  [
+                    JSON.parse(generated).tabularForm ||
+                      JSON.parse(generated).content,
+                  ][myId.split("_")[1]] || ""
+                )
+              ),
+              [smallItemAlternativeComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  "← " +
+                    [JSON.parse(generated).parents?.[0]?.title]?.[
+                      myId.split("_")[1]
+                    ]
+                )
+                .replace(
+                  "%URL%",
+                  `?id=${
+                    [JSON.parse(generated).parents?.[0]?.id]?.[
+                      myId.split("_")[1]
+                    ]
+                  }${state()}`
+                ),
+              [smallItemComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  (
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.length === 3
+                        ? JSON.parse(generated).filteredChildren[2]
+                        : JSON.parse(generated).filteredChildren?.length > 3
+                        ? JSON.parse(generated).childSummaryThirdOnwards ||
+                          JSON.parse(generated).childSummaryFifthOnwards ||
+                          JSON.parse(generated).childSummarySeventhOnwards
+                        : "",
+                    ]?.[myId.split("_")[1]]?.title || ""
+                  ).replace(".", "")
+                )
+                .replace(
+                  "%BODY%",
+                  (
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.length === 3
+                        ? JSON.parse(generated).filteredChildren[2]
+                        : { shortForm: "" },
+                    ]?.[myId.split("_")[1]]?.shortForm || ""
+                  ).replace(".", "")
+                )
+                .replace(
+                  "%IMG%",
+                  "https://cdn.sanity.io/images/zq5it0ga/production/" +
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.length === 3
+                        ? JSON.parse(generated).filteredChildren[2]
+                        : {
+                            picture: [
+                              {},
+                              {
+                                asset: {
+                                  _ref: "image-86bbd311062531853ef5174dea541b8d60075dbe-1024x1024-png",
+                                },
+                              },
+                            ],
+                          },
+                    ]?.[myId.split("_")[1]]?.picture?.[1]?.asset._ref
+                      .replace("image-", "")
+                      .replace("-png", ".png")
+                      .replace("-webp", ".webp")
+                      .replace("-jpg", ".jpg")
+                )
+                .replace(
+                  "%URL%",
+                  ((node) => {
+                    return (
+                      node &&
+                      (node.link && node.link !== ""
+                        ? node.link
+                        : `?id=${node.nodeId}${state()}`)
+                    );
+                  })(
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.length === 3
+                        ? JSON.parse(generated).filteredChildren[2]
+                        : JSON.parse(generated).childSummaryThirdOnwards ||
+                          JSON.parse(generated).childSummaryFifthOnwards ||
+                          JSON.parse(generated).childSummarySeventhOnwards,
+                    ]?.[myId.split("_")[1]]
+                  )
+                ),
+            }[myId.split("_")[0]],
+            1: {
+              [headingComponent]: data.html.replace(
+                "%CONTENT%",
+                currentId() !== "daily"
+                  ? [JSON.parse(generated).title, ""][myId.split("_")[1]] || ""
+                  : JSON.parse(generated).tabularForm
+                  ? ""
+                  : childrenSelection[0]?.title
+              ),
+              [textComponent]: data.html.replace(
+                "%CONTENT%",
+                marked.parse(
+                  [
+                    JSON.parse(generated).tabularForm ||
+                      JSON.parse(generated).content,
+                    JSON.parse(generated).tabularForm2,
+                  ][myId.split("_")[1]] || ""
+                )
+              ),
+              [smallItemAlternativeComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  "← " +
+                    [JSON.parse(generated).parents?.[0]?.title]?.[
+                      myId.split("_")[1]
+                    ]
+                )
+                .replace(
+                  "%URL%",
+                  `?id=${
+                    [JSON.parse(generated).parents?.[0]?.id]?.[
+                      myId.split("_")[1]
+                    ]
+                  }${state()}`
+                ),
+              [smallItemComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  [
+                    JSON.parse(generated).filteredChildren?.[0],
+                    JSON.parse(generated).filteredChildren?.[1],
+                    JSON.parse(generated).filteredChildren?.[2],
+                    JSON.parse(generated).filteredChildren?.[3],
+                    JSON.parse(generated).filteredChildren?.[4],
+                    JSON.parse(generated).filteredChildren?.[5],
+                    JSON.parse(generated).filteredChildren?.[6],
+                    JSON.parse(generated).filteredChildren?.[7],
+                    JSON.parse(generated).filteredChildren?.[8],
+                  ]?.[myId.split("_")[1]]?.title
+                )
+                .replace(
+                  "%BODY%",
+                  [
+                    JSON.parse(generated).filteredChildren?.[0],
+                    JSON.parse(generated).filteredChildren?.[1],
+                    JSON.parse(generated).filteredChildren?.[2],
+                    JSON.parse(generated).filteredChildren?.[3],
+                    JSON.parse(generated).filteredChildren?.[4],
+                    JSON.parse(generated).filteredChildren?.[5],
+                    JSON.parse(generated).filteredChildren?.[6],
+                    JSON.parse(generated).filteredChildren?.[7],
+                    JSON.parse(generated).filteredChildren?.[8],
+                  ]?.[myId.split("_")[1]]?.shortForm || "..."
+                )
+                .replace(
+                  "%IMG%",
+                  "https://cdn.sanity.io/images/zq5it0ga/production/" +
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.[2],
+                      JSON.parse(generated).filteredChildren?.[3],
+                      JSON.parse(generated).filteredChildren?.[4],
+                      JSON.parse(generated).filteredChildren?.[5],
+                      JSON.parse(generated).filteredChildren?.[6],
+                      JSON.parse(generated).filteredChildren?.[7],
+                      JSON.parse(generated).filteredChildren?.[8],
+                    ]?.[myId.split("_")[1]]?.picture?.[1]?.asset._ref
+                      .replace("image-", "")
+                      .replace("-png", ".png")
+                      .replace("-webp", ".webp")
+                      .replace("-jpg", ".jpg")
+                )
+                .replace(
+                  "%URL%",
+                  ((node) => {
+                    return (
+                      node &&
+                      (node.link && node.link !== ""
+                        ? node.link
+                        : `?id=${node.nodeId}${state()}`)
+                    );
+                  })(
+                    [
+                      JSON.parse(generated).filteredChildren?.[0],
+                      JSON.parse(generated).filteredChildren?.[1],
+                      JSON.parse(generated).filteredChildren?.[2],
+                      JSON.parse(generated).filteredChildren?.[3],
+                      JSON.parse(generated).filteredChildren?.[4],
+                      JSON.parse(generated).filteredChildren?.[5],
+                      JSON.parse(generated).filteredChildren?.[6],
+                      JSON.parse(generated).filteredChildren?.[7],
+                      JSON.parse(generated).filteredChildren?.[8],
+                    ]?.[myId.split("_")[1]]
+                  )
+                ),
+            }[myId.split("_")[0]],
+            2: {
+              [sitewideTabsComponent]: data.html
+                .replace("%TAB1%", "Dagligbank")
+                .replace("%ACTIVE1%", currentId() === "daily" && "active")
+                .replace("%URL1%", `?id=daily${state()}`)
+                .replace("%TAB2%", "Nett- og mobilbank")
+                .replace("%ACTIVE2%", currentId() === "net" && "active")
+                .replace("%URL2%", `?id=net${state()}`)
+                .replace("%TAB3%", "Kort")
+                .replace("%ACTIVE3%", currentId() === "card" && "active")
+                .replace("%URL3%", `?id=card${state()}`)
+                .replace("%TAB4%", "Betaling")
+                .replace("%ACTIVE4%", currentId() === "payment" && "active")
+                .replace("%URL4%", `?id=payment${state()}`)
+                .replace("%TAB5%", "BankID")
+                .replace("%ACTIVE5%", currentId() === "bankid" && "active")
+                .replace("%URL5%", `?id=bankid${state()}`),
+              [headingAlternativeComponent]: data.html.replace(
+                "%CONTENT%",
+                [
+                  currentId() === "daily" ? "" : JSON.parse(generated).title,
+                  childrenSelection[0]?.title,
+                ][myId.split("_")[1]] || ""
+              ),
+              [textComponent]: data.html.replace(
+                "%CONTENT%",
+                marked.parse(
+                  [
+                    currentId() === "daily"
+                      ? ""
+                      : JSON.parse(generated).content,
+                    childrenSelection[0]?.nodeId === "activate-bankid"
+                      ? `<button onClick='window.location="https://www.jaerensparebank.no/dagligbank/nett-og-mobilbank/bankid/aktivering"'><span><h4>${childrenSelection[0].content}</h4></span></button>`
+                      : childrenSelection[0]?.content,
+                  ][myId.split("_")[1]] || ""
+                )
+              ),
+              [smallItemAlternativeComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  "← " +
+                    [JSON.parse(generated).parents?.[0]?.title]?.[
+                      myId.split("_")[1]
+                    ]
+                )
+                .replace(
+                  "%URL%",
+                  `?id=${
+                    [JSON.parse(generated).parents?.[0]?.id]?.[
+                      myId.split("_")[1]
+                    ]
+                  }${state()}`
+                ),
+              [bigItemComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  [
+                    childrenSelection[1],
+                    childrenSelection[2],
+                    childrenSelection[3],
+                    childrenSelection[4],
+                    childrenSelection[5],
+                    childrenSelection[6],
+                    childrenSelection[7],
+                    childrenSelection[8],
+                    childrenSelection[9],
+                    childrenSelection[10],
+                  ]?.[myId.split("_")[1]]?.title
+                )
+                .replace(
+                  "%CLASS%",
+                  [
+                    childrenSelection[1],
+                    childrenSelection[2],
+                    childrenSelection[3],
+                    childrenSelection[4],
+                    childrenSelection[5],
+                    childrenSelection[6],
+                    childrenSelection[7],
+                    childrenSelection[8],
+                    childrenSelection[9],
+                    childrenSelection[10],
+                  ]?.[myId.split("_")[1]]?.content.indexOf("| --") !== -1
+                    ? "widget"
+                    : ""
+                )
+                .replace(
+                  "%BODY%",
+                  marked.parse(
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]?.tabularForm ||
+                      [
+                        childrenSelection[1],
+                        childrenSelection[2],
+                        childrenSelection[3],
+                        childrenSelection[4],
+                        childrenSelection[5],
+                        childrenSelection[6],
+                        childrenSelection[7],
+                        childrenSelection[8],
+                        childrenSelection[9],
+                        childrenSelection[10],
+                      ]?.[myId.split("_")[1]]?.shortForm ||
+                      ""
+                  )
+                )
+                .replace(
+                  "%IMG%",
+                  "https://cdn.sanity.io/images/zq5it0ga/production/" +
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]?.picture?.[1]?.asset._ref
+                      .replace("image-", "")
+                      .replace("-png", ".png")
+                      .replace("-webp", ".webp")
+                      .replace("-jpg", ".jpg")
+                )
+                .replace(
+                  "%URL%",
+                  ((node) => {
+                    return (
+                      node &&
+                      (node.link && node.link !== ""
+                        ? node.link
+                        : `?id=${node.nodeId}${state()}`)
+                    );
+                  })(
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]
+                  )
+                ),
+            }[myId.split("_")[0]],
+            3: {
+              [sitewideTabsComponent]: data.html
+                .replace("%TAB1%", "Dagligbank")
+                .replace("%ACTIVE1%", currentId() === "daily" && "active")
+                .replace("%URL1%", `?id=daily${state()}`)
+                .replace("%TAB2%", "Nett- og mobilbank")
+                .replace("%ACTIVE2%", currentId() === "net" && "active")
+                .replace("%URL2%", `?id=net${state()}`)
+                .replace("%TAB3%", "Kort")
+                .replace("%ACTIVE3%", currentId() === "card" && "active")
+                .replace("%URL3%", `?id=card${state()}`)
+                .replace("%TAB4%", "Betaling")
+                .replace("%ACTIVE4%", currentId() === "payment" && "active")
+                .replace("%URL4%", `?id=payment${state()}`)
+                .replace("%TAB5%", "BankID")
+                .replace("%ACTIVE5%", currentId() === "bankid" && "active")
+                .replace("%URL5%", `?id=bankid${state()}`),
+              [headingAlternativeComponent]: data.html.replace(
+                "%CONTENT%",
+                [
+                  currentId() === "daily" ? "" : JSON.parse(generated).title,
+                  childrenSelection[0]?.title,
+                ][myId.split("_")[1]] || ""
+              ),
+              [textComponent]: data.html.replace(
+                "%CONTENT%",
+                marked.parse(
+                  [
+                    currentId() === "daily"
+                      ? ""
+                      : JSON.parse(generated).content,
+                    childrenSelection[0]?.nodeId === "activate-bankid"
+                      ? `<button onClick='window.location="https://www.jaerensparebank.no/dagligbank/nett-og-mobilbank/bankid/aktivering"'><span><h4>${childrenSelection[0].content}</h4></span></button>`
+                      : childrenSelection[0]?.content,
+                  ][myId.split("_")[1]] || ""
+                )
+              ),
+              [smallItemAlternativeComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  "← " +
+                    [JSON.parse(generated).parents?.[0]?.title]?.[
+                      myId.split("_")[1]
+                    ]
+                )
+                .replace(
+                  "%URL%",
+                  `?id=${
+                    [JSON.parse(generated).parents?.[0]?.id]?.[
+                      myId.split("_")[1]
+                    ]
+                  }${state()}`
+                ),
+              [bigItemComponent]: data.html
+                .replace(
+                  "%TITLE%",
+                  [
+                    childrenSelection[1],
+                    childrenSelection[2],
+                    childrenSelection[3],
+                    childrenSelection[4],
+                    childrenSelection[5],
+                    childrenSelection[6],
+                    childrenSelection[7],
+                    childrenSelection[8],
+                    childrenSelection[9],
+                    childrenSelection[10],
+                  ]?.[myId.split("_")[1]]?.title
+                )
+                .replace(
+                  "%CLASS%",
+                  [
+                    childrenSelection[1],
+                    childrenSelection[2],
+                    childrenSelection[3],
+                    childrenSelection[4],
+                    childrenSelection[5],
+                    childrenSelection[6],
+                    childrenSelection[7],
+                    childrenSelection[8],
+                    childrenSelection[9],
+                    childrenSelection[10],
+                  ]?.[myId.split("_")[1]]?.children === null
+                    ? [
+                        childrenSelection[1],
+                        childrenSelection[2],
+                        childrenSelection[3],
+                        childrenSelection[4],
+                        childrenSelection[5],
+                        childrenSelection[6],
+                        childrenSelection[7],
+                        childrenSelection[8],
+                        childrenSelection[9],
+                        childrenSelection[10],
+                      ]?.[myId.split("_")[1]]?.content.indexOf("| --") !== -1
+                      ? "widget terminated"
+                      : [
+                          childrenSelection[1],
+                          childrenSelection[2],
+                          childrenSelection[3],
+                          childrenSelection[4],
+                          childrenSelection[5],
+                          childrenSelection[6],
+                          childrenSelection[7],
+                          childrenSelection[8],
+                          childrenSelection[9],
+                          childrenSelection[10],
+                        ]?.[myId.split("_")[1]]?.link
+                      ? ""
+                      : "terminated"
+                    : [
+                        childrenSelection[1],
+                        childrenSelection[2],
+                        childrenSelection[3],
+                        childrenSelection[4],
+                        childrenSelection[5],
+                        childrenSelection[6],
+                        childrenSelection[7],
+                        childrenSelection[8],
+                        childrenSelection[9],
+                        childrenSelection[10],
+                      ]?.[myId.split("_")[1]]?.content.indexOf("| --") !== -1
+                    ? "widget"
+                    : ""
+                )
+                .replace(
+                  "%BODY%",
+                  marked.parse(
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]?.link
+                      ? [
+                          childrenSelection[1],
+                          childrenSelection[2],
+                          childrenSelection[3],
+                          childrenSelection[4],
+                          childrenSelection[5],
+                          childrenSelection[6],
+                          childrenSelection[7],
+                          childrenSelection[8],
+                          childrenSelection[9],
+                          childrenSelection[10],
+                        ]?.[myId.split("_")[1]]?.shortForm
+                      : [
+                          childrenSelection[1],
+                          childrenSelection[2],
+                          childrenSelection[3],
+                          childrenSelection[4],
+                          childrenSelection[5],
+                          childrenSelection[6],
+                          childrenSelection[7],
+                          childrenSelection[8],
+                          childrenSelection[9],
+                          childrenSelection[10],
+                        ]?.[myId.split("_")[1]]?.content ||
+                          [
+                            childrenSelection[1],
+                            childrenSelection[2],
+                            childrenSelection[3],
+                            childrenSelection[4],
+                            childrenSelection[5],
+                            childrenSelection[6],
+                            childrenSelection[7],
+                            childrenSelection[8],
+                            childrenSelection[9],
+                            childrenSelection[10],
+                          ]?.[myId.split("_")[1]]?.tabularForm ||
+                          ""
+                  )
+                )
+                .replace(
+                  "%IMG%",
+                  "https://cdn.sanity.io/images/zq5it0ga/production/" +
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]?.picture?.[1]?.asset._ref
+                      .replace("image-", "")
+                      .replace("-png", ".png")
+                      .replace("-webp", ".webp")
+                      .replace("-jpg", ".jpg")
+                )
+                .replace(
+                  "%URL%",
+                  ((node) => {
+                    return (
+                      node &&
+                      (node.link && node.link !== ""
+                        ? node.link
+                        : `?id=${node.nodeId}${state()}`)
+                    );
+                  })(
+                    [
+                      childrenSelection[1],
+                      childrenSelection[2],
+                      childrenSelection[3],
+                      childrenSelection[4],
+                      childrenSelection[5],
+                      childrenSelection[6],
+                      childrenSelection[7],
+                      childrenSelection[8],
+                      childrenSelection[9],
+                      childrenSelection[10],
+                    ]?.[myId.split("_")[1]]
+                  )
+                ),
+            }[myId.split("_")[0]],
+          }[formObject.e];
+
+          function tableStuff() {
+            const select = document.createElement("select");
+            shadowRoot
+              .querySelectorAll("div > ol > li")
+              .forEach((item, index) => {
+                const option = document.createElement("option");
+
+                option.innerText = item.querySelector("p").innerText;
+                option.value = `_${index}`;
+                item.querySelector("p").style.display = "none";
+                if (item.querySelector("table")) {
+                  item.querySelector("table").id = `table_${index}`;
+                  item.querySelector("table").style.display = "none";
+                }
+                if (item.querySelector("ul")) {
+                  item.querySelector("ul").id = `ul_${index}`;
+                  item.querySelector("ul").style.display = "none";
+                }
+                if (item.querySelector("strong:not(p > strong)")) {
+                  item.querySelector(
+                    "strong:not(p > strong)"
+                  ).id = `strong_${index}`;
+                  item.querySelector("strong:not(p > strong)").style.display =
+                    "none";
+                }
+                select.appendChild(option);
+              });
+
+            shadowRoot.querySelector("#body").prepend(select);
+            if (shadowRoot.querySelector(`#table_0`))
+              shadowRoot.querySelector(`#table_0`).style.display = "table";
+            if (shadowRoot.querySelector(`#ul_0`))
+              shadowRoot.querySelector(`#ul_0`).style.display = "block";
+            if (shadowRoot.querySelector(`#strong_0`))
+              shadowRoot.querySelector(`#strong_0`).style.display = "block";
+            select.addEventListener("change", () => {
+              shadowRoot
+                .querySelectorAll("table")
+                .forEach((item) => (item.style.display = "none"));
+              shadowRoot
+                .querySelectorAll("ul")
+                .forEach((item) => (item.style.display = "none"));
+              shadowRoot
+                .querySelectorAll("strong:not(p > strong)")
+                .forEach((item) => (item.style.display = "none"));
+              if (shadowRoot.querySelector(`#table${select.value}`))
+                shadowRoot.querySelector(
+                  `#table${select.value}`
+                ).style.display = "table";
+              if (shadowRoot.querySelector(`#ul${select.value}`))
+                shadowRoot.querySelector(`#ul${select.value}`).style.display =
+                  "block";
+              if (shadowRoot.querySelector(`#strong${select.value}`))
+                shadowRoot.querySelector(
+                  `#strong${select.value}`
+                ).style.display = "block";
+            });
+          }
+
+          function widgetStuff() {
+            if (shadowRoot.querySelectorAll("table").length > 1) {
+              shadowRoot.querySelector(".widget").innerHTML =
+                `
+                <strong>Prisliste kort, betalingsformidling og andre tjenester</strong>
+                <br />
+                <br />
+              Kategori:<br/>
+                <select id="pre">
+    </select>
+    Tjeneste:<br/>
+              <select id="list">
+    </select>
+    Pris:<br/>
+        <p id="result">&nbsp;</p>
+              ` + shadowRoot.querySelector(".widget").innerHTML;
+
+              let colNumber = 1; // here can it be determinate from which column take results
+              let printResult = shadowRoot.getElementById("result");
+              let list = shadowRoot.getElementById("pre");
+              const options = [];
+              const results = [];
+
+              let tables = shadowRoot.querySelectorAll("table");
+              tables.forEach((table) => {
+                table.style.display = "none";
+              });
+              shadowRoot.querySelectorAll("table + ul").forEach((item) => {
+                item.style.display = "none";
+              });
+              shadowRoot.querySelectorAll("p + ol").forEach((item) => {
+                item.style.display = "none";
+              });
+              let ps = shadowRoot.querySelectorAll("p");
+              ps.forEach((p) => {
+                p.style.display = "none";
+              });
+
+              function doSomeShit(table) {
+                let rows = table.rows.length;
+                let list = shadowRoot.getElementById("list");
+                list.innerHTML = "";
+                const options = [];
+                const results = [];
+
+                for (let i = 1; i < rows; i++) {
+                  let firstCol = table.rows[i].cells[0];
+                  let secondCol = table.rows[i].cells[colNumber];
+                  options.push(firstCol.innerHTML);
+                  results.push(secondCol.innerHTML);
+                }
+
+                for (let i = 0; i < options.length; i++) {
+                  let opt = options[i];
+                  let el = document.createElement("option");
+                  el.textContent = opt;
+                  el.value = i;
+                  list.appendChild(el);
+                }
+
+                const select = shadowRoot.getElementById("list");
+
+                select.addEventListener("click", (event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                });
+
+                select.addEventListener("change", (event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  printResult.style.display = "block";
+                  printResult.style.opacity = "0";
+                  const target = event.target;
+                  setTimeout(() => {
+                    printResult.innerHTML = results[target.value].replaceAll(
+                      "*",
+                      ""
+                    );
+                    printResult.style.opacity = "1";
+                  }, 250);
+                });
+              }
+
+              shadowRoot.querySelector("div > ol").style.listStyleType = "none";
+              shadowRoot.querySelectorAll("ul").forEach((ul) => {
+                ul.style.listStyleType = "none";
+              });
+              let rows = shadowRoot.querySelectorAll("div > ol > li");
+
+              rows.forEach((row, i) => {
+                options.push(row.querySelector("p").innerText);
+                if (row.querySelector("table")) {
+                  row.querySelector("table").id = `pre_${i}`;
+                  results.push(row.querySelector("table"));
+                  let opt = options[i];
+                  let el = document.createElement("option");
+                  el.textContent = opt;
+                  el.value = `pre_${i}`;
+                  list.appendChild(el);
+                }
+              });
+
+              const select = shadowRoot.getElementById("pre");
+
+              select.addEventListener("change", (event) => {
+                printResult.style.display = "none";
+                doSomeShit(shadowRoot.getElementById(select.value));
+                shadowRoot
+                  .getElementById("list")
+                  .dispatchEvent(new CustomEvent("change"));
+              });
+
+              select.dispatchEvent(new CustomEvent("change"));
+            } else if (shadowRoot.querySelectorAll("table").length === 1) {
+              if (shadowRoot.querySelector(".widget").querySelector("div")) {
+                shadowRoot.querySelector(".widget div").innerHTML += `<br />
+    <select id="list">
+    </select>
+
+        <p id="result"></p>
+        <a id="result2"><span><h4>Book møte</h4></span></a>
+              `;
+              } else {
+                shadowRoot.querySelector(".widget").innerHTML += `
+    <select id="list">
+    </select>
+
+        <p id="result"></p>
+        <a id="result2"><span><h4>Book møte</h4></span></a>
+              `;
+              }
+
+              let colNumber = 1; // here can it be determinate from which column take results
+              let printResult = shadowRoot.getElementById("result");
+              let list = shadowRoot.getElementById("list");
+              const options = [];
+              const results = [];
+              let table = shadowRoot.querySelector("table");
+              table.style.display = "none";
+              let rows = table.rows.length;
+
+              for (let i = 1; i < rows; i++) {
+                let firstCol = table.rows[i].cells[0];
+                let secondCol = table.rows[i].cells[colNumber];
+                options.push(firstCol.innerHTML);
+                results.push(secondCol.innerHTML);
+              }
+
+              // populate list
+              for (let i = 0; i < options.length; i++) {
+                let opt = options[i];
+                let el = document.createElement("option");
+                el.textContent = opt;
+                el.value = i;
+                list.appendChild(el);
+              }
+
+              const select = shadowRoot.getElementById("list");
+
+              select.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              });
+
+              select.addEventListener("change", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (colNumber === 1) {
+                  printResult = shadowRoot.getElementById("result2");
+                  shadowRoot.getElementById("result").style.display = "none";
+                  shadowRoot.getElementById("result2").style.display =
+                    "inline-flex";
+                  printResult.href = results[event.target.value]
+                    .split(">")[1]
+                    .replace("</a", "");
+                } else {
+                  // create just paragraph
+                  printResult.innerHTML = results[event.target.value];
+                }
+              });
+
+              select.dispatchEvent(new CustomEvent("change"));
+            }
+          }
+
+          if (formObject.e === "0") {
+            if (
+              JSON.parse(generated).tabularForm &&
+              shadowRoot.querySelector("[data-type=text]") &&
+              shadowRoot.querySelector("[data-type=text]").innerHTML !== ""
+            ) {
+              shadowRoot
+                .querySelector("[data-type=text]")
+                ?.classList.add("widget");
+              widgetStuff();
+            }
+          }
+
+          if (formObject.e === "1") {
+            if (
+              JSON.parse(generated).tabularForm &&
+              shadowRoot.querySelector("[data-type=text]") &&
+              shadowRoot.querySelector("[data-type=text]").innerHTML !== ""
+            ) {
+              shadowRoot
+                .querySelector("[data-type=text]")
+                ?.classList.add("widget");
+              widgetStuff();
+            }
+          }
+
+          if (formObject.e === "2" || formObject.e === "3") {
+            if (
+              JSON.parse(generated).tabularForm &&
+              shadowRoot.querySelector("#body") &&
+              shadowRoot.querySelector("#body").innerHTML !== ""
+            ) {
+              tableStuff();
+            }
+            if (
+              shadowRoot.querySelector(".widget") &&
+              shadowRoot.querySelector(".widget").innerHTML !== ""
+            ) {
+              shadowRoot.querySelector("section").setAttribute("onClick", "");
+              shadowRoot.querySelector("h4").innerHTML = shadowRoot
+                .querySelector("h4")
+                .innerHTML.replace(" →", "");
+              widgetStuff();
+            }
+          }
+
+          if (formObject.e === "2" || formObject.e === "3") {
+            if (
+              childrenSelection[0]?.children?.length > 0 &&
+              shadowRoot.querySelector("#body") &&
+              myId.split("_")[1] === "1"
+            ) {
+              shadowRoot.querySelector(
+                "#body"
+              ).innerHTML += `<button style="margin-top: 2rem; margin-bottom: 0" onClick='window.location=\"?id=${
+                childrenSelection[0]?.nodeId
+              }${state()}\"'><span><h4>${
+                childrenSelection[0].title
+              } →</h4></span></button>`;
+            }
+          }
+
+          if (formObject.e === "3") {
+            if (
+              shadowRoot
+                .querySelector("section")
+                ?.classList.contains("terminated") &&
+              !shadowRoot.querySelector("section")?.classList.contains("widget")
+            ) {
+              const frag = document.createDocumentFragment();
+              shadowRoot.querySelector("section").setAttribute("onClick", "");
+              shadowRoot.querySelector("h4").innerHTML = shadowRoot
+                .querySelector("h4")
+                .innerHTML.replace(" →", "");
+              frag.appendChild(shadowRoot);
+              const wrap = document.createElement("div");
+              wrap.className = "special";
+              wrap.appendChild(frag);
+              document.querySelector(".item2").appendChild(wrap);
+
+              // shadowRoot.querySelector("h4").innerHTML = shadowRoot
+              //   .querySelector("h4")
+              //   .innerHTML.replace(" →", "");
+              // shadowRoot.querySelector("section").style.background =
+              //   "transparent";
+              // shadowRoot.querySelector("section").style.pointerEvents = "none";
+              // shadowRoot.querySelector("section").style.boxShadow = "none";
+            }
+          }
+
+          document.querySelector(
+            "#bg"
+          ).style.background = `linear-gradient(#ffffffff 12.5%, #ffffffe0 25%, #fffffff8 50%, #ffffff 75%), url(${
+            "https://cdn.sanity.io/images/zq5it0ga/production/" +
+            JSON.parse(generated)
+              .picture?.[0]?.asset._ref.replace("image-", "")
+              .replace("-png", ".png")
+              .replace("-webp", ".webp")
+              .replace("-jpg", ".jpg")
+          })`;
+
+          document.querySelector("#pic") &&
+            (document.querySelector("#pic").style.backgroundImage = `url(${
+              "https://cdn.sanity.io/images/zq5it0ga/production/" +
+              JSON.parse(generated)
+                .picture?.[0]?.asset._ref.replace("image-", "")
+                .replace("-png", ".png")
+                .replace("-webp", ".webp")
+                .replace("-jpg", ".jpg")
+            })`);
+          style.textContent = data.css || "";
+          style.textContent += `
+            div.widget {
+              backdrop-filter: blur(16px);
+              padding: 3rem;
+              box-shadow: inset #beb8b430 0 0 0 1px, 0 0 .5rem 1rem #9b65f104,0 .25rem .5rem -.25rem #141c2410,0 .5rem 1rem -.25rem #141c2408;
+              background: radial-gradient(closest-side, #ffffff60 50%, #ffffff00);
+              border-radius: 1.5rem;
+              text-align: left;
+              height: auto;
+              width: ${formObject.e === "1" ? 920 : 920}px;
+              box-sizing: border-box;
+              margin-bottom: 1rem;
+              overflow: hidden;
+            }
+            
+            section.widget {
+              cursor: auto;
+              backdrop-filter: blur(16px);
+              align-items: start;
+              box-shadow: inset #beb8b430 0 0 0 1px, 0 0 .5rem 1rem #9b65f104,0 .25rem .5rem -.25rem #141c2410,0 .5rem 1rem -.25rem #141c2408;
+              background: radial-gradient(closest-side, #ffffff60 50%, #ffffff00);
+              padding-top: 2rem;
+              padding-right: 2rem;
+            }
+
+            .widget a {
+              color: #63b1bc;
+            }
+
+            .widget select {
+              width: 100%;
+    border: none;
+    margin-right: 0.25rem;
+    height: 64px;
+    padding: 1rem;
+    cursor: pointer;
+    background: #dfdad580;
+    outline: none;
+    font-size: 1.25rem;
+    font-family: 'Eika Semibold Regular';
+    border-radius: 32px;
+    box-sizing: border-box;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: inset 0 0 .5rem 1rem #9b65f104, inset 0 .25rem .5rem -.25rem #141c2410, inset 0 .5rem 1rem -.25rem #141c2408;
+    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+    color: rgb(51, 51, 51);
+    padding-left: 1.5rem;
+    padding-right: 3.5rem;
+    background-image: url(https://jsb.versjon.no/down.png);
+    background-repeat: no-repeat;
+    background-position: right;
+    background-size: 64px 64px;
+            }
+
+            #result {
+              font-family: "Eika Semibold Regular";
+    color: #beb8b4;
+    font-size: 48px;
+    line-height: 56px;
+    margin: 0;
+    margin-top: 0.5rem;
+    transition: opacity 0.125s ease-in-out;
+            }
+
+            .widget h6 {
+              display: none;
+            }
+
+
+            #result2 {
+  background: #63b1bc;
+  width: auto;
+  height: 64px;
+  padding: 1rem;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-family: "Open Sans", Arial, sans-serif;
+  border-radius: 8px;
+  box-sizing: border-box;
+  box-shadow: 0 0 0.5rem 1rem #9b65f104, 0 0.25rem 0.5rem -0.25rem #141c2410,
+    0 0.5rem 1rem -0.25rem #141c2408;
+  display: inline-flex;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #fff;
+  justify-content: center;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+#result2 h4 {
+  font-family: "Eika Semibold Regular";
+  font-size: 1.25rem;
+  margin: 0;
+}
+          `;
+          shadowRoot.appendChild(style);
+          script.textContent = data.javascript || "";
+          shadowRoot.appendChild(script);
+          shadowRoot.innerHTML.indexOf("undefined") === -1 &&
+            shadowRoot.innerHTML.indexOf("null") === -1 &&
+            toShow.push(this.id);
+        }
+      }
+
+      function state() {
+        return `&e=${formObject.e}&a=${formObject.a}`;
+      }
+
+      function currentId() {
+        return new URLSearchParams(window.location.search).get("id");
+      }
+
+      if (!currentId()) {
+        const url = new URL(window.location);
+        url.searchParams.set("id", "daily");
+        window.location = url;
+      } else {
+        localStorage.setItem("oldNode", localStorage.getItem("node"));
+        localStorage.setItem("node", currentId());
+        if ("customElements" in window)
+          customElements.define("jsb-component", Component);
+        document
+          .getElementById("widget")
+          .addEventListener("change", async function (e) {
+            if (window.searchMode) return;
+            document.getElementById("body").style.opacity = "0";
+
+            const formData = new FormData(this);
+
+            let component;
+
+            // for (let [key, value] of formData.entries()) {
+            // formObject[key] = value;
+            // }
+
+            console.log(formData.get("e"));
+
+            formObject.e = formData.get("e");
+            formObject.a = formData.get("e");
+
+            document
+              .getElementById("ui")
+              .setAttribute("data-layout", formObject.e);
+
+            const url = new URL(window.location);
+            url.searchParams.set("e", formObject.e);
+            url.searchParams.set("a", formObject.a);
+
+            generated = await askAI(currentId(), formObject.e, formObject.a);
+
+            if (
+              (JSON.parse(generated).children === undefined ||
+                JSON.parse(generated).children?.length === 0) &&
+              currentId().indexOf("__") === -1
+            ) {
+              // if (formObject.e === "3") {
+              //   window.location = `/?id=${
+              //     JSON.parse(generated).parents[0].id
+              //   }&${state().slice(1)}#${JSON.parse(generated).nodeId}`;
+              // }
+              terminated = true;
+              document.body.classList.add("terminated");
+            }
+            if (currentId().indexOf("__") !== -1 && formObject.e !== "0") {
+              window.location = `/?id=${currentId().slice(
+                0,
+                -4
+              )}&${state().slice(1)}`;
+            }
+            if (currentId() === "daily") {
+              document.body.classList.add("root");
+            }
+
+            window.history.pushState("foo", "Foo", url);
+
+            component = document.createElement("jsb-component");
+
+            document.querySelector(".item1").innerHTML = "";
+            document.querySelector(".item2").innerHTML = "";
+            document.querySelector(".item3").innerHTML = "";
+            document.querySelector(".item4").innerHTML = "";
+            document.querySelector(".item5").innerHTML = "";
+            document.querySelector(".item6").innerHTML = "";
+            document.querySelector(".item7").innerHTML = "";
+            document.querySelector(".item8").innerHTML = "";
+            document.querySelector(".item9").innerHTML = "";
+            document.querySelector(".item10").innerHTML = "";
+            // document.querySelector("#modal").innerHTML = "";
+
+            if (formObject.e === "2" || formObject.e === "3") {
+              const tabs = document.createElement("jsb-component");
+
+              tabs.id = sitewideTabsComponent + "_0";
+              document.querySelector(".item1").appendChild(tabs);
+            }
+
+            const small = [
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+              document.createElement("jsb-component"),
+            ];
+            if (formObject.e === "0" || formObject.e === "1") {
+              const smallAlt = document.createElement("jsb-component");
+              smallAlt.id = smallItemAlternativeComponent + "_0";
+
+              const title = document.createElement("jsb-component");
+              const title2 = document.createElement("jsb-component");
+              const text = document.createElement("jsb-component");
+              const text2 = document.createElement("jsb-component");
+
+              title.id = headingComponent + "_0";
+              title2.id = headingComponent + "_0";
+              text.id = textComponent + "_0";
+              text2.id = textComponent + "_1";
+              document.querySelector(".item1").appendChild(title);
+              document.querySelector(".item1").appendChild(text);
+              document.querySelector(".item1").appendChild(text2);
+
+              small[0].id = smallItemComponent + "_0";
+              small[1].id = smallItemComponent + "_1";
+              small[2].id = smallItemComponent + "_2";
+
+              document.querySelector(".item2").appendChild(small[0]);
+              document.querySelector(".item3").appendChild(small[1]);
+              document.querySelector(".item4").appendChild(small[2]);
+              document.querySelector(".item1").appendChild(smallAlt);
+            }
+            if (formObject.e === "1") {
+              small[3].id = smallItemComponent + "_3";
+              small[4].id = smallItemComponent + "_4";
+              small[5].id = smallItemComponent + "_5";
+              small[6].id = smallItemComponent + "_6";
+              small[7].id = smallItemComponent + "_7";
+              small[8].id = smallItemComponent + "_8";
+              document.querySelector(".item5").appendChild(small[3]);
+              document.querySelector(".item6").appendChild(small[4]);
+              document.querySelector(".item7").appendChild(small[5]);
+              document.querySelector(".item8").appendChild(small[6]);
+              document.querySelector(".item9").appendChild(small[7]);
+              document.querySelector(".item10").appendChild(small[8]);
+            }
+            if (formObject.e === "2" || formObject.e === "3") {
+              const pic = document.createElement("div");
+              pic.id = "pic";
+              document.querySelector(".item2").appendChild(pic);
+
+              const smallAlt = document.createElement("jsb-component");
+              smallAlt.id = smallItemAlternativeComponent + "_0";
+
+              document.querySelector(".item2").appendChild(smallAlt);
+
+              const text = document.createElement("jsb-component");
+              const title = document.createElement("jsb-component");
+
+              const text2 = document.createElement("jsb-component");
+              const title2 = document.createElement("jsb-component");
+
+              const text3 = document.createElement("jsb-component");
+              const title3 = document.createElement("jsb-component");
+
+              text.id = textComponent + "_0";
+              title.id = headingAlternativeComponent + "_0";
+              text2.id = textComponent + "_1";
+              title2.id = headingAlternativeComponent + "_1";
+              text3.id = textComponent + "_2";
+              title3.id = headingAlternativeComponent + "_2";
+              document.querySelector(".item2").appendChild(title);
+              document.querySelector(".item2").appendChild(text);
+              document.querySelector(".item2").appendChild(title2);
+              document.querySelector(".item2").appendChild(text2);
+              document.querySelector(".item2").appendChild(title3);
+              document.querySelector(".item2").appendChild(text3);
+
+              const cards = [
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+                document.createElement("jsb-component"),
+              ];
+
+              cards[0].id = bigItemComponent + "_0";
+              cards[1].id = bigItemComponent + "_1";
+              cards[2].id = bigItemComponent + "_2";
+              cards[3].id = bigItemComponent + "_3";
+              cards[4].id = bigItemComponent + "_4";
+              cards[5].id = bigItemComponent + "_5";
+              cards[6].id = bigItemComponent + "_6";
+              cards[7].id = bigItemComponent + "_7";
+              cards[8].id = bigItemComponent + "_8";
+              cards[9].id = bigItemComponent + "_9";
+              document.querySelector(".item3").appendChild(cards[0]);
+              document.querySelector(".item3").appendChild(cards[1]);
+              document.querySelector(".item3").appendChild(cards[2]);
+              document.querySelector(".item3").appendChild(cards[3]);
+              document.querySelector(".item3").appendChild(cards[4]);
+              document.querySelector(".item3").appendChild(cards[5]);
+              document.querySelector(".item3").appendChild(cards[6]);
+              document.querySelector(".item3").appendChild(cards[7]);
+              document.querySelector(".item3").appendChild(cards[8]);
+              document.querySelector(".item3").appendChild(cards[9]);
+            }
+
+            document.getElementById("body").style.opacity = "1";
+            setInterval(() => {
+              const id = toShow.pop();
+
+              if (id && document.querySelector(`#${id}`)) {
+                document.querySelector(`#${id}`).style.opacity = "1";
+                document.querySelector(`#${id}`).style.pointerEvents = "all";
+                document.querySelector(`#${id}`).style.height = "auto";
+              }
+            }, 100);
+          });
+
+        if (currentId() !== null) {
+          generated = await askAI(
+            currentId(),
+            new URLSearchParams(window.location.search).get("e") || "2",
+            new URLSearchParams(window.location.search).get("a") || "2"
+          );
+        }
+
+        ((e) => (document.getElementById("e").value = e || 2))(
+          new URLSearchParams(window.location.search).get("e")
+        );
+
+        // ((a) => (document.getElementById("a").value = a || 2))(
+        //   new URLSearchParams(window.location.search).get("a")
+        // );
+
+        document
+          .getElementById("widget")
+          .dispatchEvent(new CustomEvent("change"));
+        setupAudio();
+
+        if (new URLSearchParams(window.location.search).get("onboard")) {
+          document.getElementById("onboard1").style.display = "block";
+          document.getElementById("onboard2").style.display = "block";
+          document.getElementById("onboard3").style.display = "block";
+        }
+
+        document.getElementById("onboard1").addEventListener("click", () => {
+          document.getElementById("onboard1").style.display = "none";
+        });
+
+        document.getElementById("onboard2").addEventListener("click", () => {
+          document.getElementById("onboard2").style.display = "none";
+        });
+
+        document.getElementById("onboard3").addEventListener("click", () => {
+          document.getElementById("onboard3").style.display = "none";
+        });
+      }
+    </script>
+  </body>
+</html>

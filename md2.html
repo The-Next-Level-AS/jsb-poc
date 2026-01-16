@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+
+      table {
+        width: 100%; /* Full-width */
+        border-collapse: collapse; /* Collapses the border */
+        font-family: Arial, sans-serif; /* Font style */
+        margin: 20px 0; /* Space around the table */
+      }
+
+      th {
+        background-color: #f2f2f2; /* Light grey background */
+        color: #333; /* Dark grey text */
+        text-align: left; /* Align text to the left */
+        padding: 12px 15px; /* Padding around text */
+        border-bottom: 2px solid #ddd; /* Bottom border */
+      }
+
+      td {
+        padding: 8px 15px; /* Padding around text */
+        border-bottom: 1px solid #ddd; /* Bottom border */
+      }
+
+      tr:hover {
+        background-color: #f9f9f9; /* Lighter grey on hover */
+      }
+
+      tr:nth-child(odd) {
+        background-color: #f1f1f1; /* Zebra striping */
+      }
+    </style>
+    <script type="module">
+      import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+      import { createClient } from "https://esm.sh/@sanity/client";
+
+      const api = createClient({
+          projectId: "zq5it0ga",
+          dataset: "production",
+          useCdn: false, // true
+          apiVersion: "2024-04-04",
+        }),
+        data = (
+          await api.fetch(
+            `*[_type == "node" && id == "${new URLSearchParams(
+              window.location.search
+            ).get("id")}"]`
+          )
+        )[0];
+
+      document.body.innerHTML += marked.parse(data?.content || "");
+    </script>
+  </body>
+</html>
