@@ -1,0 +1,15 @@
+packages:
+  - name: jsb
+    functions:
+      - name: search
+        runtime: nodejs:24
+        main: main
+        web: raw
+        annotations:
+          web-custom-options: true
+        environment:
+          OPENAI_API_KEY: "${OPENAI_API_KEY}"
+          ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
+        limits:
+          timeout: 45000
+          memory: 256

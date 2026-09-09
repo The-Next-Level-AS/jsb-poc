@@ -1,17 +1,10 @@
 import { createClient } from "https://esm.sh/@sanity/client";
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.0/+esm";
-import { OpenAI } from "https://cdn.jsdelivr.net/npm/openai@4.36.0/+esm";
 
 const api = createClient({
   projectId: "zq5it0ga",
   dataset: "production",
   useCdn: true, // true
   apiVersion: "2024-04-04",
-});
-const openai = new OpenAI({
-  organization: "org-FtGCFjfFkfFDRwBsUFUWEwVa",
-  apiKey: "",
-  dangerouslyAllowBrowser: true,
 });
 
 async function fetchData() {
@@ -20,68 +13,21 @@ async function fetchData() {
   );
 }
 
-function convertToMermaid(data) {
-  let mermaidString = "graph LR;";
-
-  function traverse(node, parentId) {
-    const nodeId = `id_${node.id}`;
-
-    mermaidString += `${parentId} --> ${nodeId};`;
-    node.children?.forEach((child) => traverse(child, nodeId));
-  }
-
-  data.forEach((rootNode) => {
-    const rootNodeId = `id_${rootNode.id}`;
-
-    mermaidString += `${rootNodeId}("${rootNode.title}");`;
-    rootNode.children?.forEach((child) => traverse(child, rootNodeId));
-  });
-
-  return mermaidString;
-}
-
-mermaid.initialize({ startOnLoad: false });
+// The provider key is configured on the DigitalOcean function, never in the browser.
+const SEARCH_ENDPOINT = "https://faas-ams3-2a2df116.doserverless.co/api/v1/web/fn-b858f54b-90b1-4e75-b3d7-e729bccfc432/jsb/search";
 
 export const askAI2 = async function (message) {
   const data = await fetchData();
-  const mermaidDiagram = convertToMermaid(data);
+  const response = await fetch(SEARCH_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  if (!response.ok) throw new Error("Semantic search is unavailable.");
+  const result = await response.json();
+  if (!Array.isArray(result?.ids)) throw new Error("Invalid search response.");
 
-  // const match = (
-  //   await fetch(
-  //     "https://faas-ams3-2a2df116.doserverless.co/api/v1/web/fn-9813aa14-b1ff-41ef-bed8-493c9adda1b8/default/ai?message=" +
-  //       encodeURIComponent(message)
-  //   ).then((res) => res.json())
-  // ).choices[0].message.content;
-
-  // console.log(match);
-
-  const match = (
-    await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: [
-            "You provide bank services. Given the node tree specified in Mermaid syntax below, you always respond with (only) a comma separated list of IDs of up to five nodes that best matches my stated intent.\n\n",
-            mermaidDiagram,
-          ].join(""),
-        },
-        {
-          role: "user",
-          content: message,
-        },
-      ],
-      temperature: 0,
-      seed: 23,
-      max_tokens: 256,
-      top_p: 0.5,
-      frequency_penalty: 0,
-      presence_penalty: 0,
-    })
-  )?.choices?.[0]?.message?.content;
-
-  return match
-    .replaceAll(" ", "")
-    .split(",")
-    .map((matched) => data.find(({ id }) => matched === `id_${id}`));
+  return result.ids
+    .map((matched) => data.find(({ id }) => matched === id))
+    .filter(Boolean);
 };
