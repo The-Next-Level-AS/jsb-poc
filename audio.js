@@ -2,8 +2,10 @@ import { askAI2 } from "./ask2.js";
 
 const bigItemComponent = "id9290bda0-5b11-45d5-a45e-ad1a4575ab72",
   headingAlternativeComponent = "id31f3cfdf-f1c6-4837-935e-af14edce875f";
+let searchVersion = 0;
 
 async function common(message) {
+  const version = ++searchVersion;
   window.searchQuery = message;
   document.getElementById("ui").setAttribute("data-layout", "X");
 
@@ -26,14 +28,25 @@ async function common(message) {
   const loading = document.createElement("p");
   loading.className = "search-loading";
   loading.setAttribute("role", "status");
-  loading.textContent = "Søker …";
+  loading.textContent = "Tenker...";
   document.querySelector(".item1").appendChild(loading);
 
   try {
-    window.searchResult = await askAI2(message);
+    const results = await askAI2(message);
+    if (version !== searchVersion) return;
+    window.searchResult = results;
   } finally {
     // Remove this request's indicator, even if a newer search has started.
     loading.remove();
+  }
+
+  if (window.searchResult.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "search-empty";
+    empty.setAttribute("role", "status");
+    empty.textContent = "Ingen treff.";
+    document.querySelector(".item1").appendChild(empty);
+    return;
   }
 
   const cards = [

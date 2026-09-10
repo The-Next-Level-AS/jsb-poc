@@ -66,7 +66,7 @@ test("search shows an accessible loading indicator until results arrive", async 
   const request = common("bankkort");
   assert.equal(loading().length, 1);
   assert.equal(loading()[0].attributes.role, "status");
-  assert.equal(loading()[0].textContent, "Søker …");
+  assert.equal(loading()[0].textContent, "Tenker...");
   pending.resolve([{ id: "card" }]);
   await request;
   assert.equal(loading().length, 0);
@@ -85,10 +85,30 @@ test("search removes the indicator when the backend rejects", async (t) => {
   assert.equal(loading().length, 0);
 });
 
+test("an empty result shows a status instead of cards and clears on the next search", async (t) => {
+  const retry = deferred();
+  const { loading, items } = fixture(t, (query) => query === "empty" ? Promise.resolve([]) : retry.promise);
+  await common("empty");
+  assert.equal(loading().length, 0);
+  const emptyStatus = items[0].children.find((child) => child.textContent === "Ingen treff.");
+  assert.ok(emptyStatus);
+  assert.equal(emptyStatus.attributes.role, "status");
+  assert.equal(items[0].children.length, 2);
+
+  const request = common("retry");
+  assert.equal(items[0].children.includes(emptyStatus), false);
+  assert.equal(loading().length, 1);
+  retry.resolve([{ id: "card" }]);
+  await request;
+  assert.equal(loading().length, 0);
+  assert.equal(items[0].children.some((child) => child.textContent === "Ingen treff."), false);
+  assert.equal(items[0].children.length, 6);
+});
+
 for (const outcome of ["resolve", "reject"]) {
   test(`an older request that ${outcome}s does not remove the active indicator`, async (t) => {
     const first = deferred(), second = deferred();
-    const { loading } = fixture(t, (query) => query === "first" ? first.promise : second.promise);
+    const { loading, items } = fixture(t, (query) => query === "first" ? first.promise : second.promise);
     const firstRequest = common("first");
     const secondRequest = common("second");
     assert.equal(loading().length, 1);
@@ -102,6 +122,7 @@ for (const outcome of ["resolve", "reject"]) {
       await rejected;
     }
     assert.deepEqual(loading(), [activeIndicator]);
+    assert.equal(items[0].children.some((child) => child.textContent === "Ingen treff."), false);
     second.resolve([]);
     await secondRequest;
     assert.equal(loading().length, 0);
