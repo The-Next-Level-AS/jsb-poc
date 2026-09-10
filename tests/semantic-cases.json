@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Indirect overseas context and Norwegian slang",
+    "query": "tanta mi som driver en kenguru farm har lyst til å sende meg noe spenn",
+    "topIds": ["receive-abroad-payment", "foreign-payment"],
+    "includeIds": ["receive-abroad-payment", "foreign-payment"]
+  },
+  {
+    "name": "Receiving from abroad, different slang",
+    "query": "Onkelen min i Canada skal overføre noen grunker til meg",
+    "topIds": ["receive-abroad-payment"]
+  },
+  {
+    "name": "Sending rather than receiving",
+    "query": "Jeg skal sende noen slanter til søstera mi som bor i Italia",
+    "topIds": ["abroad-payment", "foreign-payment"]
+  },
+  {
+    "name": "Domestic transfer should not imply abroad",
+    "query": "Tanta mi i Bryne vil vippse meg noen spenn",
+    "topIds": ["vipps-pay", "vipps-friend-pay"],
+    "excludeIds": ["receive-abroad-payment", "foreign-payment", "abroad-payment"]
+  },
+  {
+    "name": "Explicit banking need overrides story details",
+    "query": "Tanta mi har en kengurufarm. Jeg vil sperre kortet mitt.",
+    "topIds": ["bank-card-block", "credit-card-block", "eika-more-block-card"],
+    "excludeIds": ["receive-abroad-payment", "foreign-payment", "abroad-payment"]
+  },
+  {
+    "name": "No banking intent",
+    "query": "Hvordan driver man en kengurufarm?",
+    "empty": true
+  },
+  {
+    "name": "Literal receiving query",
+    "query": "Hvordan mottar jeg penger fra utlandet?",
+    "topIds": ["receive-abroad-payment"]
+  },
+  {
+    "name": "Existing lost-wallet query",
+    "query": "jeg har mistet lommeboken",
+    "topIds": ["bank-card-accident", "bank-card-block", "credit-card-block", "lost-wallet-news"],
+    "includeIds": ["bank-card-block"]
+  }
+]

@@ -23,7 +23,18 @@ async function common(message) {
   title.id = headingAlternativeComponent + "_0";
   document.querySelector(".item1").appendChild(title);
 
-  window.searchResult = await askAI2(message);
+  const loading = document.createElement("p");
+  loading.className = "search-loading";
+  loading.setAttribute("role", "status");
+  loading.textContent = "Søker …";
+  document.querySelector(".item1").appendChild(loading);
+
+  try {
+    window.searchResult = await askAI2(message);
+  } finally {
+    // Remove this request's indicator, even if a newer search has started.
+    loading.remove();
+  }
 
   const cards = [
     document.createElement("jsb-component"),

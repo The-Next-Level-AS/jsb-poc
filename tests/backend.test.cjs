@@ -45,7 +45,13 @@ test('returns ranked semantic IDs using server credentials and public published 
   const modelRequest = JSON.parse(calls[1].init.body);
   assert.equal(modelRequest.model, 'gpt-4o');
   assert.equal(modelRequest.response_format.json_schema.strict, true);
-  assert.deepEqual(JSON.parse(modelRequest.messages[1].content).documents.map(document => document.id), ['car-loan', 'mortgage']);
+  assert.deepEqual(modelRequest.messages[1], { role: 'user', content: 'Jeg trenger penger til ny bil' });
+  assert.match(modelRequest.messages[0].content, /car-loan\("Billån"\)/);
+  assert.match(modelRequest.messages[0].content, /mortgage\("Boliglån"\)/);
+  assert.doesNotMatch(modelRequest.messages[0].content, /Draft content|Lån til kjøp av bil/);
+  assert.equal(modelRequest.temperature, 0);
+  assert.equal(modelRequest.seed, 23);
+  assert.equal(modelRequest.top_p, 0.5);
   assert.ok(calls.every(call => call.init.signal instanceof AbortSignal));
 });
 

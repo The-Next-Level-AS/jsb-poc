@@ -361,6 +361,36 @@ body.terminated #ui[data-layout="1"] > div:not(.item1) {
   overflow: scroll;
 }
 
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #404040;
+  margin: 1rem 0;
+}
+
+.search-loading::before {
+  content: "";
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 3px solid #63b1bc40;
+  border-top-color: #63b1bc;
+  border-radius: 50%;
+  animation: search-spin 0.8s linear infinite;
+}
+
+@keyframes search-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-loading::before {
+    animation: none;
+  }
+}
+
 form legend {
   color: #404040;
   padding: 0;
